@@ -72,5 +72,6 @@ create table tag
         unique (tagName)
 ) comment '标签';
 
+-- 给标签表的userId添加一个索引
 create index idx_userId
     on tag (userId);

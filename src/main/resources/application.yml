@@ -1,15 +1,16 @@
 # 公共配置文件
 spring:
-  profiles:
-    active: dev
+#  profiles:
+#    active: dev
   application:
     name: partner-system-backend
   # DataSource Config
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.253.128:3306/partenerSystem?serverTimezone=Asia/Shanghai
+#    url: jdbc:mysql://192.168.253.128:3306/partenerSystem?serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/partenerSystem?serverTimezone=Asia/Shanghai
     username: root
-    password: root
+    password: Eplugger231
   # session 失效时间（分钟）
   session:
     timeout: 86400
