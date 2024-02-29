@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import java.util.Arrays;
@@ -18,17 +19,22 @@ import java.util.List;
 @SpringBootTest
 public class UserServiceTest {
 
+    /**
+     * 盐值，混淆密码
+     */
+    private static final String SALT = "sz";
+
     @Resource
     private UserService userService;
 
     @Test
     public void testAddUser() {
         User user = new User();
-        user.setUsername("本项目_所属 [程序员鱼皮](https://t.zsxq.com/0emozsIJh)\n");
-        user.setUserAccount("123");
+        user.setUsername("某政");
+        user.setUserAccount("14547557");
         user.setAvatarUrl("https://636f-codenav-8grj8px727565176-1256524210.tcb.qcloud.la/img/logo.png");
         user.setGender(0);
-        user.setUserPassword("xxx");
+        user.setUserPassword(DigestUtils.md5DigestAsHex((SALT + "haha1314").getBytes()));
         user.setPhone("123");
         user.setEmail("456");
         boolean result = userService.save(user);

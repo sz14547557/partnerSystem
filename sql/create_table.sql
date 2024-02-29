@@ -24,7 +24,7 @@ create table user
     userRole     int      default 0 not null comment '用户角色 0 - 普通用户 1 - 管理员',
     planetCode   varchar(512) null comment '星球编号',
     tags         varchar(1024) null comment '标签 json 列表'
-) comment '用户';
+) CHARACTER SET = utf8,comment '用户';
 
 -- 队伍表
 create table team
@@ -40,7 +40,7 @@ create table team
     createTime  datetime default CURRENT_TIMESTAMP null comment '创建时间',
     updateTime  datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     isDelete    tinyint  default 0 not null comment '是否删除'
-) comment '队伍';
+) CHARACTER SET = utf8,comment '队伍';
 
 -- 用户队伍关系
 create table user_team
@@ -53,7 +53,7 @@ create table user_team
     createTime datetime default CURRENT_TIMESTAMP null comment '创建时间',
     updateTime datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     isDelete   tinyint  default 0 not null comment '是否删除'
-) comment '用户队伍关系';
+) CHARACTER SET = utf8,comment '用户队伍关系';
 
 
 -- 标签表（可以不创建，因为标签字段已经放到了用户表中）
@@ -70,7 +70,7 @@ create table tag
     isDelete   tinyint  default 0 not null comment '是否删除',
     constraint uniIdx_tagName
         unique (tagName)
-) comment '标签';
+) CHARACTER SET = utf8,comment '标签';
 
 -- 给标签表的userId添加一个索引
 create index idx_userId

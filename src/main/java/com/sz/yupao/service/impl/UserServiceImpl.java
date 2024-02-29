@@ -43,7 +43,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     /**
      * 盐值，混淆密码
      */
-    private static final String SALT = "yupi";
+    private static final String SALT = "sz";
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword, String planetCode) {
@@ -176,7 +176,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     /**
-     * 根据标签搜索用户（内存过滤）
+     * 根据标签搜索用户（【内存】过滤）
      *
      * @param tagNameList 用户要拥有的标签
      * @return
@@ -189,12 +189,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         // 1. 先查询所有用户
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         List<User> userList = userMapper.selectList(queryWrapper);
+
+
+        //todo sz※  查询tag字段中json类型的数据，根据tag查询用户     将Java对象转为Json是序列化，Json转为Java对象是反序列化
         Gson gson = new Gson();
-        // 2. 在内存中判断是否包含要求的标签
+        // 2. 在【内存】中判断是否包含要求的标签，非常灵活
         return userList.stream().filter(user -> {
             String tagsStr = user.getTags();
+            // 遍历用户，判断当前用户的tag标签中是否包含满足条件的tag,返回一个满足查询tag的User集合
+            // 将tag标签转为集合，用Set集合可以实现去重。 gson.fromJson将Json对象转为Java对象 。gson.toJson 将Java对象转为Json对象
             Set<String> tempTagNameSet = gson.fromJson(tagsStr, new TypeToken<Set<String>>() {
             }.getType());
+
+            // 防止直接操作tempTagNameSet集合为空导致的空指针问题，如果为空则初始化一个集合防止空指针
             tempTagNameSet = Optional.ofNullable(tempTagNameSet).orElse(new HashSet<>());
             for (String tagName : tagNameList) {
                 if (!tempTagNameSet.contains(tagName)) {
@@ -202,7 +209,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
                 }
             }
             return true;
-        }).map(this::getSafetyUser).collect(Collectors.toList());
+        })
+         //  对集合中的全部元素执行一次方法，默认方法参数为集合中的数据
+         .map(this::getSafetyUser)
+         .collect(Collectors.toList());
     }
 
     @Override
@@ -311,7 +321,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     /**
-     * 根据标签搜索用户（SQL 查询版）
+     * 根据标签搜索用户（SQL 查询版） 实现简单
      *
      * @param tagNameList 用户要拥有的标签
      * @return
@@ -322,7 +332,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        // 拼接 and 查询
+        //   拼接 and 查询
         // like '%Java%' and like '%Python%'
         for (String tagName : tagNameList) {
             queryWrapper = queryWrapper.like("tags", tagName);
