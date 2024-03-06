@@ -9,11 +9,11 @@
         <version>2.6.4</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
-    <groupId>com.yupi</groupId>
-    <artifactId>yupao-backend</artifactId>
+    <groupId>com.sz</groupId>
+    <artifactId>partner-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>yupao-backend</name>
-    <description>yupao-backend</description>
+    <name>partner-backend</name>
+    <description>partner-backend</description>
     <properties>
         <java.version>1.8</java.version>
     </properties>
@@ -74,7 +74,7 @@
             <artifactId>easyexcel</artifactId>
             <version>3.1.0</version>
         </dependency>
-        <!--添加swagger的依赖-->
+        <!--添加swagger knife4j的依赖-->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-spring-boot-starter</artifactId>
@@ -114,8 +114,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-<!--    [编程导航学习圈](https://t.zsxq.com/0emozsIJh) 连接万名编程爱好者，一起优秀！20000+ 小伙伴交流分享、40+ 大厂嘉宾一对一答疑、4000+ 编程问答参考、100+ 各方向编程交流群-->
 
     <build>
         <plugins>

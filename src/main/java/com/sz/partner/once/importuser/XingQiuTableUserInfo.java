@@ -4,7 +4,7 @@ import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.Data;
 
 /**
- * 星球表格用户信息
+ * todo sz※ EasyExcel 对于指定表头的Excel文件读取  ， @ExcelProperty指定要读取的Excel的表头名称，根据读取的Excel不同自定义进行匹配
  */
 @Data
 public class XingQiuTableUserInfo {
@@ -12,7 +12,8 @@ public class XingQiuTableUserInfo {
     /**
      * id
      */
-    @ExcelProperty("成员编号")
+    // @ExcelProperty("成员编号")
+    @ExcelProperty("名称")
     private String planetCode;
 
     /**

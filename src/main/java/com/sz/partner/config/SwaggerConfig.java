@@ -13,10 +13,11 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
 
 /**
- *todo sz※ 此处自定义 Swagger 接口文档的配置
+ *todo sz※ 此处自定义 Swagger 接口文档的配置 整合knife4j
  */
 @Configuration
 @EnableSwagger2WebMvc
+// 在dev、test模式时，knife4j才生效
 @Profile({"dev", "test"})
 public class SwaggerConfig {
 

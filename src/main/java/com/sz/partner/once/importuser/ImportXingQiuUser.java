@@ -21,9 +21,13 @@ public class ImportXingQiuUser {
         List<XingQiuTableUserInfo> userInfoList =
                 EasyExcel.read(fileName).head(XingQiuTableUserInfo.class).sheet().doReadSync();
         System.out.println("总数 = " + userInfoList.size());
+        // 使用同步读获取全部数据后再进行去重
+
         Map<String, List<XingQiuTableUserInfo>> listMap =
                 userInfoList.stream()
+                        // 过滤掉名称为空的用户
                         .filter(userInfo -> StringUtils.isNotEmpty(userInfo.getUsername()))
+                        // 将相同名称的用户分到同一个组内
                         .collect(Collectors.groupingBy(XingQiuTableUserInfo::getUsername));
         for (Map.Entry<String, List<XingQiuTableUserInfo>> stringListEntry : listMap.entrySet()) {
             if (stringListEntry.getValue().size() > 1) {
