@@ -1,7 +1,12 @@
 # 公共配置文件
 spring:
-#  profiles:
-#    active: dev
+  # session 失效时间（分钟）
+  session:
+    timeout: 86400
+    # todo sz※  Spring默认将Session存储在服务器中，通过store-type配置将Session存储到Redis数据库中
+    store-type: redis
+  profiles:
+    active: dev
   application:
     name: partner-system-backend
   # DataSource Config
@@ -11,10 +16,8 @@ spring:
     url: jdbc:mysql://localhost:3306/partenerSystem?serverTimezone=Asia/Shanghai
     username: root
     password: Eplugger231
-  # session 失效时间（分钟）
-  session:
-    timeout: 86400
-    store-type: redis
+
+#todo sz※ SpringBoot2.6以上版本，在整合Knife4j时,需要添加下面的mvc路径配置防止出现空指针
   mvc:
     pathmatch:
       matching-strategy: ANT_PATH_MATCHER
@@ -29,6 +32,8 @@ server:
     context-path: /api
     session:
       cookie:
+#  todo sz※  domain用于控制Cookie的作用范围（不同域名之间是无法共享Cookie的），允许会话Cookie在本地主机和您指定的域上设置。
+#  只能解决多个前端访问一个后端时携带Cookie 如果多个后端共享Session时，需要使用到分布式Session了？
         domain: localhost
 mybatis-plus:
   configuration:
