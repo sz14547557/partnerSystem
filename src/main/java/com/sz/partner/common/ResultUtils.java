@@ -26,8 +26,6 @@ public class ResultUtils {
         return new BaseResponse<>(errorCode);
     }
 
-    // 作者 [程序员鱼皮]()
-
     /**
      * 失败
      *

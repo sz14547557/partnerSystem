@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/user")
-// 在后端通过@CrossOrigin注解配置跨域
+// 在后端通过@CrossOrigin注解配置跨域(部分防御，指定的域名允许跨域)   可以同时配置多个前端地址允许跨域请求
 @CrossOrigin(origins = {"http://localhost:3000"})
 @Slf4j
 public class UserController {
@@ -103,6 +103,7 @@ public class UserController {
             queryWrapper.like("username", username);
         }
         List<User> userList = userService.list(queryWrapper);
+        // 给用户脱敏返回
         List<User> list = userList.stream().map(user -> userService.getSafetyUser(user)).collect(Collectors.toList());
         return ResultUtils.success(list);
     }
@@ -116,10 +117,11 @@ public class UserController {
         return ResultUtils.success(userList);
     }
 
-    // todo 推荐多个，未实现
+    // todo 推荐多个，未实现   添加缓存操作
     @GetMapping("/recommend")
     public BaseResponse<Page<User>> recommendUsers(long pageSize, long pageNum, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
+        // 使用String.format方式替换模版对应的数据
         String redisKey = String.format("yupao:user:recommend:%s", loginUser.getId());
         ValueOperations<String, Object> valueOperations = redisTemplate.opsForValue();
         // 如果有缓存，直接读缓存
@@ -130,7 +132,7 @@ public class UserController {
         // 无缓存，查数据库
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
         userPage = userService.page(new Page<>(pageNum, pageSize), queryWrapper);
-        // 写缓存
+        // 写缓存 ，并设置缓存的失效时间
         try {
             valueOperations.set(redisKey, userPage, 30000, TimeUnit.MILLISECONDS);
         } catch (Exception e) {

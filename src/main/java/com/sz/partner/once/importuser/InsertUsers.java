@@ -2,6 +2,7 @@ package com.sz.partner.once.importuser;
 
 import com.sz.partner.mapper.UserMapper;
 import com.sz.partner.model.domain.User;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StopWatch;
@@ -25,8 +26,9 @@ public class InsertUsers {
 
     /**
      * 批量插入用户
+     * 测试定时任务操作 initialDelay每隔5秒执行一次  fixedRate 隔多少秒之后再次执行。如果定义为最大值，则表示只执行一次
      */
-//    @Scheduled(initialDelay = 5000, fixedRate = Long.MAX_VALUE)
+   // @Scheduled(initialDelay = 5000, fixedRate = Long.MAX_VALUE)
     public void doInsertUsers() {
         // todo sz※ StopWatch 方法测试代码执行时间
         StopWatch stopWatch = new StopWatch();
@@ -34,6 +36,11 @@ public class InsertUsers {
         // 开启计时
         stopWatch.start();
         final int INSERT_NUM = 1000;
+
+        // for循环插入数据慢的问题：
+        // 1.每次插入都要建立数据库连接，并关闭连接
+        // 2.for循环是线性的，上一次循环未执行，则需要等待
+
         for (int i = 0; i < INSERT_NUM; i++) {
             User user = new User();
             user.setUsername("某政");

@@ -131,7 +131,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         // 3. 用户脱敏
         User safetyUser = getSafetyUser(user);
-        // 4. 记录用户的登录态
+        // 4. 登录成功 记录用户的登录态
         request.getSession().setAttribute(USER_LOGIN_STATE, safetyUser);
         return safetyUser;
     }
@@ -159,7 +159,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         safetyUser.setUserRole(originUser.getUserRole());
         safetyUser.setUserStatus(originUser.getUserStatus());
         safetyUser.setCreateTime(originUser.getCreateTime());
-        safetyUser.setTags(originUser.getTags());
+        // todo sz※ 此处在获取tags时去掉收尾的字符
+        String tags = originUser.getTags();
+
+        // String firstC = tags.substring(1,tags.length());
+        // String endC=firstC.substring(0, firstC.length()-1);
+        // safetyUser.setTags(endC);
+        safetyUser.setTags(tags);
         return safetyUser;
     }
 
@@ -195,6 +201,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         Gson gson = new Gson();
         // 2. 在【内存】中判断是否包含要求的标签，非常灵活
         return userList.stream().filter(user -> {
+            // 此处会拿到[男,女]  这种数据 导致匹配[男]时会出现找不到的问题   必须要使用[]进行包括吗
+
             String tagsStr = user.getTags();
             // 遍历用户，判断当前用户的tag标签中是否包含满足条件的tag,返回一个满足查询tag的User集合
             // 将tag标签转为集合，用Set集合可以实现去重。 gson.fromJson将Json对象转为Java对象 。gson.toJson 将Java对象转为Json对象
@@ -234,6 +242,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return userMapper.updateById(user);
     }
 
+    // todo sz※ 获取当前登录用户信息
     @Override
     public User getLoginUser(HttpServletRequest request) {
         if (request == null) {
@@ -271,6 +280,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return loginUser != null && loginUser.getUserRole() == UserConstant.ADMIN_ROLE;
     }
 
+
+    // 设计如何根据标签匹配最近的队友
     @Override
     public List<User> matchUsers(long num, User loginUser) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
