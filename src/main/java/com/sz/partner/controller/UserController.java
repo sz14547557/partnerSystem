@@ -166,7 +166,7 @@ public class UserController {
     }
 
     /**
-     * 获取最匹配的用户
+     * 获取最匹配的num个用户  为什么要限定个数，本质是为了限定查询的页数，防止输入100万导致用户数据库暴露。对于所有查询都需要指定页数，防止数据暴露
      *
      * @param num
      * @param request

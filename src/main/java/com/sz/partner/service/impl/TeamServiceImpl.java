@@ -52,6 +52,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     private RedissonClient redissonClient;
 
     @Override
+    // 插入队伍和插入用户是同时进行的，需要使用事务操作
     @Transactional(rollbackFor = Exception.class)
     public long addTeam(Team team, User loginUser) {
         // 1. 请求参数是否为空？
@@ -62,9 +63,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NOT_LOGIN);
         }
+        // 表示这个值是一定不会变的。 大公司会有代码检测，定义变量之后，在下面十行代码中必须使用，定义为final之后就会消除检测，表示这个值在下面代码操作中是不会变化的。
         final long userId = loginUser.getId();
         // 3. 校验信息
-        //   1. 队伍人数 > 1 且 <= 20
+        //   1. 队伍人数 > 1 且 <= 20   使用Optional类进行包装，进行判空，如果为空则赋值一个默认值0
+
+        // Optional的orElse方法：如果该值存在就直接返回， 否则返回指定的其它值
         int maxNum = Optional.ofNullable(team.getMaxNum()).orElse(0);
         if (maxNum < 1 || maxNum > 20) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍人数不满足要求");
@@ -98,19 +102,21 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "超时时间 > 当前时间");
         }
         // 7. 校验用户最多创建 5 个队伍
-        // todo 有 bug，可能同时创建 100 个队伍
+        // todo 有 bug，可能同时创建 100 个队伍  。需要加锁，synchronized 。如果是分布式环境，则需要使用分布式锁
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("userId", userId);
+        //
         long hasTeamNum = this.count(queryWrapper);
         if (hasTeamNum >= 5) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "用户最多创建 5 个队伍");
         }
-        // 8. 插入队伍信息到队伍表
+        // 8. 插入队伍信息到队伍表 ，插入队伍和插入用户是同时进行的，需要使用事务操作 使用@Transactional注解
         team.setId(null);
         team.setUserId(userId);
         boolean result = this.save(team);
         Long teamId = team.getId();
         if (!result || teamId == null) {
+            // 因为有事务的原因，抛出异常都会导致回滚
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "创建队伍失败");
         }
         // 9. 插入用户  => 队伍关系到关系表
@@ -128,7 +134,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     @Override
     public List<TeamUserVO> listTeams(TeamQuery teamQuery, boolean isAdmin) {
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
-        // 组合查询条件
+        // 组合查询条件 teamQuery为自定义封装查询对象，里面包含了分页对象
         if (teamQuery != null) {
             Long id = teamQuery.getId();
             if (id != null && id > 0) {
@@ -208,6 +214,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (id == null || id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        // 这种this的用法需要注意
         Team oldTeam = this.getById(id);
         if (oldTeam == null) {
             throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
@@ -239,6 +246,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "队伍已过期");
         }
         Integer status = team.getStatus();
+        // 通过枚举定义 队伍状态和对应的状态值。类似一个字典操作
         TeamStatusEnum teamStatusEnum = TeamStatusEnum.getEnumByValue(status);
         if (TeamStatusEnum.PRIVATE.equals(teamStatusEnum)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "禁止加入私有队伍");
@@ -249,22 +257,26 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                 throw new BusinessException(ErrorCode.PARAMS_ERROR, "密码错误");
             }
         }
+
+        // 在多线程环境下，加入队伍。使用分布式锁保证下面的业务代码只会被执行一次
         // 该用户已加入的队伍数量
         long userId = loginUser.getId();
         // 只有一个线程能获取到锁
         RLock lock = redissonClient.getLock("yupao:join_team");
         try {
-            // 抢到锁并执行
+            // 抢到锁并执行   此处为什么要加while循环？
             while (true) {
                 if (lock.tryLock(0, -1, TimeUnit.MILLISECONDS)) {
                     System.out.println("getLock: " + Thread.currentThread().getId());
+                    // 判断当前用户已经加入的队伍数
                     QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
                     userTeamQueryWrapper.eq("userId", userId);
                     long hasJoinNum = userTeamService.count(userTeamQueryWrapper);
+
                     if (hasJoinNum > 5) {
                         throw new BusinessException(ErrorCode.PARAMS_ERROR, "最多创建和加入 5 个队伍");
                     }
-                    // 不能重复加入已加入的队伍
+                    // 此处 不能重复加入已加入的队伍
                     userTeamQueryWrapper = new QueryWrapper<>();
                     userTeamQueryWrapper.eq("userId", userId);
                     userTeamQueryWrapper.eq("teamId", teamId);
@@ -321,20 +333,22 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             this.removeById(teamId);
         } else {
             // 队伍还剩至少两人
-            // 是队长
+            // 是队长  如果不是队长则不需要转移队长权限，直接删除当前退队人员信息即可
             if (team.getUserId() == userId) {
-                // 把队伍转移给最早加入的用户
+                // 把队伍转移给最早加入的用户   此处不需要查询出全部的用户信息，采用id或者加入时间的倒叙进行查询，属于查询优化操作
                 // 1. 查询已加入队伍的所有用户和加入时间
                 QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
                 userTeamQueryWrapper.eq("teamId", teamId);
+                // 使用QueryWrapper的last方法，将自定义的sql拼接在sql后面，多个last方法只能执行一次，以最后一次last操作为准。但是可能会产生sql注入问题
                 userTeamQueryWrapper.last("order by id asc limit 2");
                 List<UserTeam> userTeamList = userTeamService.list(userTeamQueryWrapper);
                 if (CollectionUtils.isEmpty(userTeamList) || userTeamList.size() <= 1) {
                     throw new BusinessException(ErrorCode.SYSTEM_ERROR);
                 }
+                // 队长后面的用户。
                 UserTeam nextUserTeam = userTeamList.get(1);
                 Long nextTeamLeaderId = nextUserTeam.getUserId();
-                // 更新当前队伍的队长
+                // 更新当前队伍的队长为队长后面的用户
                 Team updateTeam = new Team();
                 updateTeam.setId(teamId);
                 updateTeam.setUserId(nextTeamLeaderId);
@@ -344,11 +358,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                 }
             }
         }
-        // 移除关系
+        // 移除关系  退出成员对应的队伍关系
         return userTeamService.remove(queryWrapper);
     }
 
     @Override
+    // 删除队伍操作需要添加事务，防止出现脏数据。
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteTeam(long id, User loginUser) {
         // 校验队伍是否存在
@@ -358,11 +373,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (team.getUserId() != loginUser.getId()) {
             throw new BusinessException(ErrorCode.NO_AUTH, "无访问权限");
         }
-        // 移除所有加入队伍的关联信息
+        // 移除所有加入队伍的关联信息  相同teamId的成员都会删除
         QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
         userTeamQueryWrapper.eq("teamId", teamId);
         boolean result = userTeamService.remove(userTeamQueryWrapper);
         if (!result) {
+            // 抛出异常，防止事务失败脏数据
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除队伍关联信息失败");
         }
         // 删除队伍

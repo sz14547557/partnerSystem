@@ -1,10 +1,7 @@
 package com.sz.partner.service;
 
 import org.junit.jupiter.api.Test;
-import org.redisson.api.RList;
-import org.redisson.api.RLock;
-import org.redisson.api.RMap;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
@@ -15,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Redisson 测试
+ * Redisson 测试  Redisson是一个操作Redis的本地客户端
  *
 
  */
@@ -27,6 +24,12 @@ public class RedissonTest {
 
     @Test
     void test() {
+
+        // RBucket<Object> sz = redissonClient.getBucket("sz");
+        // System.out.println( sz.get());
+
+        RKeys keys = redissonClient.getKeys();
+        keys.getKeysStream().forEach(key -> System.out.println(key));
         // list，数据存在本地 JVM 内存中
         List<String> list = new ArrayList<>();
         list.add("yupi");
@@ -34,16 +37,19 @@ public class RedissonTest {
 
         list.remove(0);
 
-        // 数据存在 redis 的内存中
+        //todo sz※  使用redisson操作集合  与java操作集合的操作是一样的 add get(0) remove(0)
+
+        // todo sz※ 但是我这边无法操作本地的redis
+        // 数据存在 redis 的内存中  直接获取 类型为list，名称为test-list的 数据 ，通过add方法直接向redis中添加数据
         RList<String> rList = redissonClient.getList("test-list");
-        rList.add("yupi");
+        rList.add("sz666");
         System.out.println("rlist:" + rList.get(0));
         rList.remove(0);
 
         // map
         Map<String, Integer> map = new HashMap<>();
-        map.put("yupi", 10);
-        map.get("yupi");
+        map.put("sz1", 10);
+        map.get("sz2");
 
         RMap<Object, Object> map1 = redissonClient.getMap("test-map");
 

@@ -281,17 +281,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
 
-    // 设计如何根据标签匹配最近的队友
+    // 设计如何根据标签匹配最近的队友 todo sz※ 设计如何匹配最近队友，需要使用算法 。返回一个map<用户,距离得分>结构
     @Override
     public List<User> matchUsers(long num, User loginUser) {
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        // 通过select方法只取需要的列，不需要使用的列不进行查询，可以提高查询效率
         queryWrapper.select("id", "tags");
         queryWrapper.isNotNull("tags");
+        //  查询全部用户的id和tags
         List<User> userList = this.list(queryWrapper);
+        // 获取当前登录用户的tags，用于做匹配
         String tags = loginUser.getTags();
         Gson gson = new Gson();
+        // new TypeToken<List<String>>() {}.getType()的意义是什么？ 将JSON格式的tags字符串转换为List集合
         List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
         }.getType());
+
         // 用户列表的下标 => 相似度
         List<Pair<User, Long>> list = new ArrayList<>();
         // 依次计算所有用户和当前用户的相似度
@@ -304,11 +309,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             }
             List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
             }.getType());
-            // 计算分数
+            // 计算分数 判断当前遍历用户与当前登录用户的距离分数
             long distance = AlgorithmUtils.minDistance(tagList, userTagList);
+            //todo sz※ 这个pair是怎么用的呢？ 这个Pair对象封装了一个kv结构。可以在List集合中实现k,v结构。不需要使用Map
             list.add(new Pair<>(user, distance));
         }
-        // 按编辑距离由小到大排序
+        // 按编辑距离由小到大排序  取出前num条距离分数最高的数据
         List<Pair<User, Long>> topUserPairList = list.stream()
                 .sorted((a, b) -> (int) (a.getValue() - b.getValue()))
                 .limit(num)
@@ -319,7 +325,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         userQueryWrapper.in("id", userIdList);
         // 1, 3, 2
         // User1、User2、User3
-        // 1 => User1, 2 => User2, 3 => User3
+        // 1 => User1, 2 => User2, 3 => User3  返回一个去掉敏感信息的用户集合
         Map<Long, List<User>> userIdUserListMap = this.list(userQueryWrapper)
                 .stream()
                 .map(user -> getSafetyUser(user))
@@ -352,6 +358,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return userList.stream().map(this::getSafetyUser).collect(Collectors.toList());
     }
 
+
+    public static void main(String[] args) {
+        ArrayList<Pair<Integer,String>> objects = new ArrayList<>();
+        objects.add(new Pair<>(12, "123"));
+        objects.add(new Pair<>(2, "123"));
+        objects.add(new Pair<>(5, "123"));
+        objects.add(new Pair<>(8, "123"));
+        objects.add(new Pair<>(1, "123"));
+
+
+        List<Pair<Integer, String>> collect = objects.stream().sorted((A, B) -> B.getKey() - A.getKey()).collect(Collectors.toList());
+
+        for (Pair<Integer, String> object : collect) {
+            Integer key = object.getKey();
+            String value = object.getValue();
+            System.out.println(key + "!!" + value);
+        }
+
+    }
 }
 
 

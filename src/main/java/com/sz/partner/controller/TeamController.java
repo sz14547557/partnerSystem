@@ -51,12 +51,15 @@ public class TeamController {
     @Resource
     private UserTeamService userTeamService;
 
+
+    // 使用自定义的请求封装类 TeamAddRequest ，剔除掉不需要传递的参数。
     @PostMapping("/add")
     public BaseResponse<Long> addTeam(@RequestBody TeamAddRequest teamAddRequest, HttpServletRequest request) {
         if (teamAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
+        // 将前端传递的数据 teamAddRequest  赋值给对象team，省去了进行set操作。
         Team team = new Team();
         BeanUtils.copyProperties(teamAddRequest, team);
         long teamId = teamService.addTeam(team, loginUser);
@@ -125,7 +128,7 @@ public class TeamController {
         return ResultUtils.success(teamList);
     }
 
-    // todo 查询分页
+    // todo 查询分页    分页对象定义在teamQuery中  前端指定分页对象的页数和数量
     @GetMapping("/list/page")
     public BaseResponse<Page<Team>> listTeamsByPage(TeamQuery teamQuery) {
         if (teamQuery == null) {
@@ -133,6 +136,7 @@ public class TeamController {
         }
         Team team = new Team();
         BeanUtils.copyProperties(teamQuery, team);
+        // 参数： 当前第几页,每一页的数据条数
         Page<Team> page = new Page<>(teamQuery.getPageNum(), teamQuery.getPageSize());
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>(team);
         Page<Team> resultPage = teamService.page(page, queryWrapper);
@@ -150,6 +154,7 @@ public class TeamController {
         return ResultUtils.success(result);
     }
 
+    // 退出队伍
     @PostMapping("/quit")
     public BaseResponse<Boolean> quitTeam(@RequestBody TeamQuitRequest teamQuitRequest, HttpServletRequest request) {
         if (teamQuitRequest == null) {

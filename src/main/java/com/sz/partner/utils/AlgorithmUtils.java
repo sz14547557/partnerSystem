@@ -11,7 +11,7 @@ import java.util.Objects;
 public class AlgorithmUtils {
 
     /**
-     * 编辑距离算法（用于计算最相似的两组标签）
+     * 编辑距离算法（用于计算最相似的两组标签） 如果需要对标签添加【权重】，则可以使用【余弦相似度算法】
      * 原理：https://blog.csdn.net/DBC_121/article/details/104198838
      *
      * @param tagList1
@@ -40,6 +40,7 @@ public class AlgorithmUtils {
                 int left = d[i - 1][j] + 1;
                 int down = d[i][j - 1] + 1;
                 int left_down = d[i - 1][j - 1];
+                // 此处进行改造，判断两个标签集合
                 if (!Objects.equals(tagList1.get(i - 1), tagList2.get(j - 1))) {
                     left_down += 1;
                 }
@@ -80,6 +81,7 @@ public class AlgorithmUtils {
                 int left = d[i - 1][j] + 1;
                 int down = d[i][j - 1] + 1;
                 int left_down = d[i - 1][j - 1];
+                // 判断两个标签字符串
                 if (word1.charAt(i - 1) != word2.charAt(j - 1)) {
                     left_down += 1;
                 }
@@ -87,5 +89,16 @@ public class AlgorithmUtils {
             }
         }
         return d[n][m];
+    }
+
+
+    public static void main(String[] args) {
+        String str1 = "sz";
+        String str2 = "szdscsdfdfddffdasadasdas";
+        String str3 = "sz1231dwd1dwddwdwdwdwdwddwwdw";
+        int i1 = minDistance(str1, str2);
+        int i2 = minDistance(str1, str3);
+        System.out.println(i1+"!!"+i2);
+
     }
 }

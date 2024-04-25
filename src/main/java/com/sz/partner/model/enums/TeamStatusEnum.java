@@ -1,7 +1,7 @@
 package com.sz.partner.model.enums;
 
 /**
- * 队伍状态枚举
+ * 队伍状态枚举   对于固定的值，创建一个枚举类
  *
 
  */

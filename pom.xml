@@ -45,6 +45,8 @@
             <artifactId>spring-session-data-redis</artifactId>
             <version>2.6.3</version>
         </dependency>
+
+<!--        todo sz※ 指定引入redisson 不是SpringBoot的项目也可以-->
         <!-- https://github.com/redisson/redisson#quick-start -->
         <dependency>
             <groupId>org.redisson</groupId>
@@ -102,7 +104,8 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+
+<!--            <optional>true</optional>-->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
